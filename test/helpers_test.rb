@@ -411,20 +411,20 @@ class HelpersTest < Test::Unit::TestCase
 
   describe 'last_modified' do
     setup do
-      now = Time.now
+      hour_ago = Time.now - (3600) # an hour ago
       mock_app {
         get '/' do
           body { 'Hello World' }
-          last_modified now
+          last_modified hour_ago
           'Boo!'
         end
       }
-      @now = now
+      @hour_ago = hour_ago
     end
 
     it 'sets the Last-Modified header to a valid RFC 2616 date value' do
       get '/'
-      assert_equal @now.httpdate, response['Last-Modified']
+      assert_equal @hour_ago.httpdate, response['Last-Modified']
     end
 
     it 'returns a body when conditional get misses' do
@@ -434,9 +434,21 @@ class HelpersTest < Test::Unit::TestCase
     end
 
     it 'halts when a conditional GET matches' do
-      get '/', {}, { 'HTTP_IF_MODIFIED_SINCE' => @now.httpdate }
+      get '/', {}, { 'HTTP_IF_MODIFIED_SINCE' => Time.now.httpdate }
       assert_equal 304, status
       assert_equal '', body
+    end   
+    
+    it 'halts when a conditional GET matches exactly' do
+      get '/', {}, { 'HTTP_IF_MODIFIED_SINCE' => @hour_ago.httpdate }
+      assert_equal 304, status
+      assert_equal '', body
+    end
+      
+    it 'returns a body when a conditional GET misses' do
+      get '/', {}, { 'HTTP_IF_MODIFIED_SINCE' => (@hour_ago - 3600).httpdate }
+      assert_equal 200, status
+      assert_equal 'Boo!', body
     end
   end
 

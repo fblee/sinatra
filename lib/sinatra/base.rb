@@ -239,7 +239,8 @@ module Sinatra
       time = time.to_time if time.respond_to?(:to_time)
       time = time.httpdate if time.respond_to?(:httpdate)
       response['Last-Modified'] = time
-      halt 304 if time == request.env['HTTP_IF_MODIFIED_SINCE']
+      header_time = request.env['HTTP_IF_MODIFIED_SINCE']
+      halt 304 unless header_time.nil? || time > header_time 
       time
     end
 
